@@ -17,8 +17,8 @@ const favoriteBlog = (blogs) => {
   if (!blogs || blogs.length === 0) { return null }
   else if (blogs.length === 1) { return blogs[0] }
 
-  const maxLikes = Math.max(...blogs.map(x => x.likes))
-  return blogs.find(x => x.likes === maxLikes)
+  //const maxLikes = Math.max(...blogs.map(x => x.likes))
+  return _.maxBy(blogs, 'likes') //blogs.find(x => x.likes === maxLikes)
 }
 
 const mostBlogs = (blogs) => {
@@ -42,9 +42,41 @@ const mostBlogs = (blogs) => {
   return retobj
 }
 
+const mostLikes = (blogs) => {
+  if (!blogs || blogs.length === 0) { return null }
+  else if (blogs.length === 1) {
+    return {
+      author: blogs[0].author,
+      likes: blogs[0].likes
+    }
+  }
+
+  // add up likes per author
+  const authorsToLikes = blogs.reduce((temp, blog) => {
+    if (!temp) { return temp }
+    if (Object.prototype.hasOwnProperty.call(temp, blog.author)) {
+      temp[blog.author] += blog.likes
+    } else {
+      temp[blog.author] = blog.likes
+    }
+    return temp
+  }, {})
+
+  const retobj = { author: '', likes: 0 }
+  Object.entries(authorsToLikes)
+    .forEach(([key, value]) => {
+      if (value > retobj.likes) {
+        retobj.author = key
+        retobj.likes = value
+      }
+    })
+  return retobj
+}
+
 module.exports = {
   dummy,
   totalLikes,
   favoriteBlog,
-  mostBlogs
+  mostBlogs,
+  mostLikes
 }
