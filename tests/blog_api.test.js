@@ -72,6 +72,22 @@ test('missing likes default to 0', async () => {
   expect(response.body.likes).toBe(0)
 })
 
+test('missing title and url cause error', async () => {
+  const newBlog = {
+    author: 'Test Author',
+    likes: 9
+  }
+
+  await api
+    .post('/api/blogs')
+    .send(newBlog)
+    .expect(400)
+
+  // check that it wasn't added
+  const blogsAtEnd = await helper.blogsInDB()
+  expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
+})
+
 afterAll(() => {
   mongoose.connection.close()
 })
