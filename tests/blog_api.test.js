@@ -55,6 +55,27 @@ test('post is successful', async () => {
   expect(response.body).toEqual(newBlog)
 })
 
+test('missing likes default to 0', async () => {
+  const newBlog = {
+    title: 'thisisatestblog',
+    author: 'Test Author',
+    url: 'https://myurl.test',
+  }
+
+  const response = await api
+    .post('/api/blogs')
+    .send(newBlog)
+    .expect(201)
+    .expect('Content-Type', /application\/json/)
+
+  // check likes
+  expect(response.body.likes).toBe(0)
+})
+
+afterAll(() => {
+  mongoose.connection.close()
+})
+
 afterAll(() => {
   mongoose.connection.close()
 })
