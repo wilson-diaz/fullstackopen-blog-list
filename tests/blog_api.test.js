@@ -32,6 +32,29 @@ test('blogs have unique identifier named id', async () => {
   expect(response.body[0].id).toBeDefined()
 })
 
+test('post is successful', async () => {
+  const newBlog = {
+    title: 'thisisatestblog',
+    author: 'Test Author',
+    url: 'https://myurl.test',
+    likes: 3
+  }
+
+  const response = await api
+    .post('/api/blogs')
+    .send(newBlog)
+    .expect(201)
+    .expect('Content-Type', /application\/json/)
+
+  // check if stored in DB
+  const notesAtEnd = await helper.blogsInDB()
+  expect(notesAtEnd).toHaveLength(helper.initialBlogs.length + 1)
+
+  // check data
+  delete response.body.id
+  expect(response.body).toEqual(newBlog)
+})
+
 afterAll(() => {
   mongoose.connection.close()
 })
