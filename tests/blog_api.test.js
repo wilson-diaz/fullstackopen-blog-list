@@ -47,8 +47,8 @@ test('post is successful', async () => {
     .expect('Content-Type', /application\/json/)
 
   // check if stored in DB
-  const notesAtEnd = await helper.blogsInDB()
-  expect(notesAtEnd).toHaveLength(helper.initialBlogs.length + 1)
+  const blogsAtEnd = await helper.blogsInDB()
+  expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length + 1)
 
   // check data
   delete response.body.id
@@ -86,10 +86,6 @@ test('missing title and url cause error', async () => {
   // check that it wasn't added
   const blogsAtEnd = await helper.blogsInDB()
   expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
-})
-
-afterAll(() => {
-  mongoose.connection.close()
 })
 
 afterAll(() => {
