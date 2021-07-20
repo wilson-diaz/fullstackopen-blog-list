@@ -92,6 +92,19 @@ describe('adding a new blog', () => {
   })
 })
 
+describe('deleting blogs', () => {
+  test('deleting a single blog', async () => {
+    const toDelete = '5a422b891b54a676234d17fa'
+    await api
+      .delete(`/api/blogs/${toDelete}`)
+      .expect(204)
+
+    // check that it does not exist in DB
+    const blogsAtEnd = await helper.blogsInDB()
+    expect(blogsAtEnd.some(blog => blog.id === toDelete)).toBe(false)
+  })
+})
+
 afterAll(() => {
   mongoose.connection.close()
 })
