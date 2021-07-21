@@ -1,4 +1,3 @@
-const jwt = require('jsonwebtoken')
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
 const User = require('../models/user')
@@ -10,8 +9,7 @@ blogsRouter.get('/', async (request, response) => {
 
 blogsRouter.post('/', async (request, response) => {
   // authenticate user
-  const decodedToken = jwt.verify(request.token, process.env.SECRET)
-  if (!(request.token && decodedToken.id)) {
+  if (!(request.token && request.user.id)) {
     let err = new Error('token missing or invalid')
     err.name = 'AuthenticationError'
     throw err
@@ -31,7 +29,7 @@ blogsRouter.post('/', async (request, response) => {
   }
 
   // find user using id from auth token
-  const user = await User.findById(decodedToken.id)
+  const user = await User.findById(request.user.id)
 
   const blog = new Blog({
     title: body.title,
@@ -50,8 +48,7 @@ blogsRouter.post('/', async (request, response) => {
 
 blogsRouter.delete('/:id', async (request, response) => {
   const toDelete = await Blog.findById(request.params.id)
-  const decodedToken = jwt.verify(request.token, process.env.SECRET)
-  if (toDelete.user.toString() !== decodedToken.id.toString()) {
+  if (toDelete.user.toString() !== request.user.id.toString()) {
     let err = new Error('wrong user')
     err.name = 'AuthenticationError'
     throw err
