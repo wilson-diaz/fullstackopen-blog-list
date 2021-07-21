@@ -1,3 +1,4 @@
+const jwt = require('jsonwebtoken')
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
 const User = require('../models/user')
@@ -7,21 +8,47 @@ blogsRouter.get('/', async (request, response) => {
   response.json(blogs)
 })
 
+const getTokenFrom = request => {
+  const authorization = request.get('authorization')
+  if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
+    return authorization.substring(7).trim()
+  }
+  return null
+}
+
 blogsRouter.post('/', async (request, response) => {
-  // default missing likes to 0
-  if (!request.body.likes) {
-    request.body.likes = 0
+  // authenticate user
+  const token = getTokenFrom(request)
+  const decodedToken = jwt.verify(token, process.env.SECRET)
+  if (!(token && decodedToken.id)) {
+    let err = new Error('token missing or invalid')
+    err.name = 'AuthenticationError'
+    throw err
   }
 
-  if (!request.body.title && !request.body.url) {
+  const body = request.body
+  // default missing likes to 0
+  if (!body.likes) {
+    body.likes = 0
+  }
+
+  // validation
+  if (!body.title && !body.url) {
     let err = new Error('missing blog title and url')
     err.name = 'ValidationError'
     throw err
   }
 
-  const user = await User.findById(request.body.user)
+  // find user using id from auth token
+  const user = await User.findById(decodedToken.id)
 
-  const blog = new Blog(request.body)
+  const blog = new Blog({
+    title: body.title,
+    author: body.author,
+    likes: body.likes,
+    url: body.url,
+    user: user._id
+  })
   const savedBlog = await blog.save()
 
   user.blogs = user.blogs.concat(savedBlog._id)
