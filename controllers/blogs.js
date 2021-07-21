@@ -13,7 +13,9 @@ blogsRouter.post('/', async (request, response) => {
   }
 
   if (!request.body.title && !request.body.url) {
-    return response.status(400).send({ error: 'missing blog title and url' })
+    let err = new Error('missing blog title and url')
+    err.name = 'ValidationError'
+    throw err
   }
 
   const blog = new Blog(request.body)
