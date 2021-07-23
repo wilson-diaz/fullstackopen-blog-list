@@ -3,6 +3,7 @@ const mongoose = require('mongoose')
 const supertest = require('supertest')
 const app = require('../app')
 const Blog = require('../models/blog')
+const User = require('../models/user')
 const helper = require('./test_helper')
 
 const api = supertest(app)
@@ -35,16 +36,33 @@ describe('viewing initial blogs saved', () => {
 })
 
 describe('adding a new blog', () => {
+  const testUser = { username: 'testuser', password: 'test123' }
+  beforeEach(async () => {
+    await User.deleteMany({})
+    const userResponse = await api
+      .post('/api/users')
+      .send(testUser)
+    testUser.id = userResponse.body.id
+
+    const loginResponse = await api
+      .post('/api/login')
+      .send(testUser)
+      .expect(200)
+    testUser.token = loginResponse.body.token
+  }, 100000)
+
   test('post is successful', async () => {
     const newBlog = {
       title: 'thisisatestblog',
       author: 'Test Author',
       url: 'https://myurl.test',
-      likes: 3
+      likes: 3,
+      user: testUser.id
     }
 
     const response = await api
       .post('/api/blogs')
+      .auth(testUser.token, { type: 'bearer' })
       .send(newBlog)
       .expect(201)
       .expect('Content-Type', /application\/json/)
@@ -63,10 +81,12 @@ describe('adding a new blog', () => {
       title: 'thisisatestblog',
       author: 'Test Author',
       url: 'https://myurl.test',
+      user: testUser.id
     }
 
     const response = await api
       .post('/api/blogs')
+      .auth(testUser.token, { type: 'bearer' })
       .send(newBlog)
       .expect(201)
       .expect('Content-Type', /application\/json/)
@@ -78,15 +98,36 @@ describe('adding a new blog', () => {
   test('missing title and url cause error', async () => {
     const newBlog = {
       author: 'Test Author',
-      likes: 9
+      likes: 9,
+      user: testUser.id
+    }
+
+    await api
+      .post('/api/blogs')
+      .auth(testUser.token, { type: 'bearer' })
+      .send(newBlog)
+      .expect(400)
+
+    // check that it wasn't added
+    const blogsAtEnd = await helper.blogsInDB()
+    expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
+  })
+
+  test('request without token is unauthorized', async () => {
+    const newBlog = {
+      title: 'thisisatestblog',
+      author: 'Test Author',
+      url: 'https://myurl.test',
+      likes: 3,
+      user: testUser.id
     }
 
     await api
       .post('/api/blogs')
       .send(newBlog)
-      .expect(400)
+      .expect(401)
 
-    // check that it wasn't added
+    // check if stored in DB
     const blogsAtEnd = await helper.blogsInDB()
     expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
   })
